@@ -27,6 +27,7 @@ class _FindAddressState extends State<FindAddress> {
       const CameraPosition(target: LatLng(33.9994409, 71.5179113), zoom: 14);
 
   onChange() {
+    // ignore: unnecessary_null_comparison
     if (sessionToken == null) {
       setState(() {
         sessionToken = uuid.v4();
