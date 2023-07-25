@@ -3,7 +3,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:http/http.dart' as http;
@@ -18,15 +17,14 @@ class FindAddress extends StatefulWidget {
 class _FindAddressState extends State<FindAddress> {
   TextEditingController searchController = TextEditingController();
   final Completer<GoogleMapController> completer = Completer();
-  double latitude = 0, longitude = 0;
+  double latitude = 0, longitude = 0, l1 = 0, l2 = 0;
   var uuid = const Uuid();
   String sessionToken = "12345";
-  bool flag = false;
   final List<Marker> _markers = [];
   List<dynamic> places = [];
 
   CameraPosition initialPosition =
-      const CameraPosition(target: LatLng(33.9994409, 71.5179113), zoom: 15);
+      const CameraPosition(target: LatLng(33.9994409, 71.5179113), zoom: 14);
 
   onChange() {
     if (sessionToken == null) {
@@ -65,22 +63,10 @@ class _FindAddressState extends State<FindAddress> {
     ),
   ];
 
-  Future<Position> getUserLocation() async {
-    await Geolocator.requestPermission()
-        .then((value) {})
-        .onError((error, stackTrace) {
-      print(error);
-    });
-
-    return await Geolocator.getCurrentPosition();
-  }
-
   @override
   void initState() {
     super.initState();
     _markers.addAll(markersList);
-
-    flag = false;
     searchController.addListener(() {
       onChange();
     });
@@ -98,52 +84,6 @@ class _FindAddressState extends State<FindAddress> {
               onMapCreated: (GoogleMapController controller) {
                 completer.complete(controller);
               },
-            ),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 20),
-                child: InkWell(
-                  onTap: () {
-                    getUserLocation().then(
-                      (value) async {
-                        latitude = value.latitude;
-                        longitude = value.longitude;
-
-                        _markers.add(
-                          Marker(
-                            markerId: const MarkerId('2'),
-                            position: LatLng(latitude, longitude),
-                          ),
-                        );
-
-                        CameraPosition cameraPosition = CameraPosition(
-                            target: LatLng(latitude, longitude), zoom: 15);
-
-                        GoogleMapController controller = await completer.future;
-
-                        controller.animateCamera(
-                          CameraUpdate.newCameraPosition(cameraPosition),
-                        );
-
-                        setState(() {});
-                      },
-                    );
-                  },
-                  child: Container(
-                    height: 70,
-                    width: 70,
-                    decoration: BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.circular(40)),
-                    child: const Icon(
-                      Icons.location_pin,
-                      size: 30,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
             ),
             Column(
               mainAxisAlignment: MainAxisAlignment.start,
@@ -169,64 +109,62 @@ class _FindAddressState extends State<FindAddress> {
                 const SizedBox(
                   height: 30,
                 ),
-                flag == true
-                    ? Container()
-                    : Expanded(
-                        child: ListView.builder(
-                          itemCount: places.length,
-                          itemBuilder: (context, index) {
-                            return Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 10.0),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                    color: Colors.blue[50],
-                                    // border: Border.all(),
-                                    borderRadius: BorderRadius.circular(10),
-                                    boxShadow: const [
-                                      BoxShadow(
-                                          blurRadius: 10,
-                                          color: Colors.grey,
-                                          spreadRadius: 1)
-                                    ]),
-                                child: ListTile(
-                                  onTap: () async {
-                                    List<Location> locations =
-                                        await locationFromAddress(
-                                            places[index]['description']);
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: places.length,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10.0, vertical: 5),
+                        child: Container(
+                          decoration: BoxDecoration(
+                              color: Colors.blue[50],
+                              // border: Border.all(),
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: const [
+                                BoxShadow(
+                                    blurRadius: 10,
+                                    color: Colors.grey,
+                                    spreadRadius: 1)
+                              ]),
+                          child: ListTile(
+                            onTap: () async {
+                              List<Location> locations =
+                                  await locationFromAddress(
+                                      places[index]['description']);
 
-                                    latitude = locations.last.latitude;
-                                    longitude = locations.last.longitude;
+                              l1 = locations.last.latitude;
+                              l2 = locations.last.longitude;
 
-                                    CameraPosition cPosition = CameraPosition(
-                                        target: LatLng(latitude, longitude),
-                                        zoom: 15);
+                              CameraPosition cPosition = CameraPosition(
+                                  target: LatLng(l1, l2), zoom: 15);
 
-                                    GoogleMapController controller =
-                                        await completer.future;
-                                    controller.animateCamera(
-                                        CameraUpdate.newCameraPosition(
-                                            cPosition));
+                              GoogleMapController controller =
+                                  await completer.future;
+                              controller.animateCamera(
+                                  CameraUpdate.newCameraPosition(cPosition));
 
-                                    markersList.add(
-                                      const Marker(
-                                        markerId: MarkerId('3'),
-                                        infoWindow: InfoWindow(
-                                            title: 'Searched Location'),
-                                      ),
-                                    );
+                              markersList.add(
+                                const Marker(
+                                    markerId: MarkerId('3'),
+                                    infoWindow:
+                                        InfoWindow(title: 'Searched Location')),
+                              );
 
-                                    setState(() {
-                                      flag == true;
-                                    });
-                                  },
-                                  title: Text(places[index]['description']),
-                                ),
-                              ),
-                            );
-                          },
+                              setState(() {
+                                places.clear();
+                                searchController.clear();
+                              });
+                            },
+                            title: Text(
+                              places[index]['description'],
+                            ),
+                          ),
                         ),
-                      )
+                      );
+                    },
+                  ),
+                )
               ],
             )
           ],

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class HomePage extends StatefulWidget {
@@ -11,6 +12,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  double latitude = 0, longitude = 0;
   MapType _currentMapType = MapType.normal;
 
   final List<Marker> _marker = [];
@@ -45,6 +47,16 @@ class _HomePageState extends State<HomePage> {
     super.initState();
 
     _marker.addAll(_markerList);
+  }
+
+  Future<Position> getUserLocation() async {
+    await Geolocator.requestPermission()
+        .then((value) {})
+        .onError((error, stackTrace) {
+      print(error);
+    });
+
+    return await Geolocator.getCurrentPosition();
   }
 
   final Completer<GoogleMapController> _controller = Completer();
@@ -104,17 +116,33 @@ class _HomePageState extends State<HomePage> {
             child: Padding(
               padding: const EdgeInsets.only(bottom: 20, left: 20),
               child: InkWell(
-                onTap: () async {
-                  GoogleMapController controller = await _controller.future;
-                  controller.animateCamera(
-                    CameraUpdate.newCameraPosition(
-                      const CameraPosition(
-                        target: LatLng(51.528607, -0.4312472),
-                        zoom: 14,
-                      ),
-                    ),
+                onTap: () {
+                  getUserLocation().then(
+                    (value) async {
+                      latitude = value.latitude;
+                      longitude = value.longitude;
+
+                      print(latitude.toString() + " " + longitude.toString());
+
+                      _markerList.add(
+                        Marker(
+                          markerId: const MarkerId('2'),
+                          position: LatLng(latitude, longitude),
+                        ),
+                      );
+
+                      CameraPosition cameraPosition = CameraPosition(
+                          target: LatLng(latitude, longitude), zoom: 15);
+
+                      GoogleMapController controller = await _controller.future;
+
+                      controller.animateCamera(
+                        CameraUpdate.newCameraPosition(cameraPosition),
+                      );
+
+                      setState(() {});
+                    },
                   );
-                  setState(() {});
                 },
                 child: Container(
                   height: 60,
