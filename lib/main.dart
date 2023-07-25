@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_api/screens/1_home_page.dart';
+import 'package:google_maps_api/screens/5_find_address.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,7 +19,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const HomePage(),
+      home: const FindAddress(),
     );
   }
 }

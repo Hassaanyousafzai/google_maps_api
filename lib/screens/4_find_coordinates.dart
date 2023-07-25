@@ -76,7 +76,7 @@ class _FindCoordinatesState extends State<FindCoordinates> {
                       CameraUpdate.newCameraPosition(
                         CameraPosition(
                           target: LatLng(coordinateOne, coordinateTwo),
-                          zoom: 14,
+                          zoom: 16,
                         ),
                       ),
                     );
